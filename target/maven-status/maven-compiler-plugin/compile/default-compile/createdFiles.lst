@@ -26,6 +26,7 @@ Controller\QuanLyCaLamController.class
 View\QuanLyDatLichView$2.class
 View\LoginView$2.class
 View\QuanLyLoaiNguyenLieuView$2.class
+com\mycompany\quanlyspa\QuanLySpa.class
 View\QuanLyCaLamView$2.class
 Repository\ThongKeRepository.class
 View\QuanLyKhachHangView.class
@@ -69,6 +70,7 @@ View\MainView$8.class
 Controller\QuanLyLoaiDichVuController$2.class
 View\TimKhachHangView.class
 View\QuanLyKhachHangView$3.class
+Controller\LoaiDichVuController.class
 View\QuanLyNhapNguyenLieuView.class
 Controller\QuanLyNguyenLieuController$7.class
 Controller\QuanLyThuChiController.class
@@ -82,6 +84,7 @@ Controller\ThongBaoController.class
 Model\LoaiDichVu.class
 View\LoginView$1.class
 View\TienTraTruocView$1.class
+View\LoaiDichVuView.class
 View\ThongKeView$1.class
 Controller\PhanTramDichVuController$5.class
 Service\TienTraTruocService.class
@@ -119,6 +122,7 @@ View\LoginView$4.class
 Repository\NhapNguyenLieuRepository.class
 View\QuanLyThuNhapPanel$1.class
 Controller\QuanLyLoaiNguyenLieuController$5.class
+Utils\IconFactory.class
 Controller\QuanLyNguyenLieuController.class
 View\QuanLyLoaiNguyenLieuView.class
 View\MainView$5.class
@@ -155,6 +159,7 @@ View\ThongKeView$3.class
 Controller\QuanLyThuNhapController.class
 Data\DataConnection.class
 Controller\TongQuanThuChiController.class
+Utils\Lib.class
 Controller\QuanLyNguyenLieuController$12.class
 Service\AuthService.class
 Repository\HoaDonRepository.class
@@ -220,9 +225,11 @@ Controller\QuanLyNguyenLieuController$4.class
 View\QuanLyChiTieuPanel$1.class
 View\LoginView$9.class
 View\DatDichVuView$3.class
+View\DichVuView.class
 View\QuanLyNhanVienView$3.class
 Repository\ThongBaoRepository.class
 View\LichSuGiaoDichTraTruocView$3.class
+Controller\DichVuController.class
 Controller\QuanLyNguyenLieuController$1.class
 Controller\MainViewController$2.class
 View\TongQuanThuChiPanel.class
@@ -231,6 +238,7 @@ Controller\QuanLyNhapNguyenLieuController$8.class
 Controller\ThongKeController$1.class
 View\TongQuanThuChiPanel$1.class
 View\ThongKeView$4.class
+View\ThongKeView$7.class
 Controller\QuanLyNhapNguyenLieuController$5.class
 Controller\PhanTramDichVuController$2.class
 Controller\PhanTramDichVuController$1.class

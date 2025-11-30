@@ -274,20 +274,32 @@ public class QuanLyCaLamController {
             String gioKetThucStr = view.getTxtGioKetThuc().getText().trim();
 
             if (!gioBatDauStr.isEmpty() && !gioKetThucStr.isEmpty()) {
-                LocalTime gioBatDau = LocalTime.parse(gioBatDauStr);
-                LocalTime gioKetThuc = LocalTime.parse(gioKetThucStr);
+                // Parse thời gian với định dạng HH:mm
+                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm");
+                LocalTime gioBatDau = LocalTime.parse(gioBatDauStr, formatter);
+                LocalTime gioKetThuc = LocalTime.parse(gioKetThucStr, formatter);
 
-                if (gioBatDau.isAfter(gioKetThuc)) {
-                    view.getTxtSoGioLam().setText("");
-                    return;
+                long minutes;
+
+                // Xử lý trường hợp làm việc qua đêm (kết thúc sang ngày hôm sau)
+                if (gioKetThuc.isBefore(gioBatDau)) {
+                    // Thêm 24 giờ cho thời gian kết thúc
+                    minutes = java.time.Duration.between(gioBatDau, gioKetThuc.plusHours(24)).toMinutes();
+                } else {
+                    minutes = java.time.Duration.between(gioBatDau, gioKetThuc).toMinutes();
                 }
 
-                long minutes = java.time.Duration.between(gioBatDau, gioKetThuc).toMinutes();
-                double hours = minutes / 60.0;
-                view.getTxtSoGioLam().setText(String.format("%.2f", hours));
+                // Tính số giờ và phút
+                long gio = minutes / 60;
+                long phut = minutes % 60;
+
+                // Định dạng thành "giờ.phút" (ví dụ: 9.30 thay vì 9.50)
+                String ketQua = String.format("%d.%02d", gio, phut);
+                view.getTxtSoGioLam().setText(ketQua);
             }
         } catch (DateTimeParseException e) {
             // Ignore parse errors during typing
+            view.getTxtSoGioLam().setText("");
         }
     }
 
@@ -308,7 +320,18 @@ public class QuanLyCaLamController {
                 return null;
             }
 
-            BigDecimal soGioLam = new BigDecimal(view.getTxtSoGioLam().getText());
+            // Xử lý số giờ làm theo định dạng mới "giờ.phút"
+            String soGioLamStr = view.getTxtSoGioLam().getText();
+            BigDecimal soGioLam;
+            if (soGioLamStr.contains(".")) {
+                String[] parts = soGioLamStr.split("\\.");
+                long gio = Long.parseLong(parts[0]);
+                long phut = Long.parseLong(parts[1]);
+                soGioLam = BigDecimal.valueOf(gio).add(BigDecimal.valueOf(phut).divide(BigDecimal.valueOf(60), 2, BigDecimal.ROUND_HALF_UP));
+            } else {
+                soGioLam = new BigDecimal(soGioLamStr);
+            }
+
             BigDecimal soGioTangCa = new BigDecimal(view.getTxtSoGioTangCa().getText());
             BigDecimal tienTip = new BigDecimal(view.getTxtTienTip().getText());
 
@@ -348,7 +371,11 @@ public class QuanLyCaLamController {
             view.getTxtNgayLam().setText(caLam.getNgayLam().toString());
             view.getTxtGioBatDau().setText(caLam.getGioBatDau().format(timeFormatter));
             view.getTxtGioKetThuc().setText(caLam.getGioKetThuc().format(timeFormatter));
-            view.getTxtSoGioLam().setText(String.format("%.2f", caLam.getSoGioLam()));
+            // Định dạng số giờ làm theo "giờ.phút"
+            BigDecimal soGioLam = caLam.getSoGioLam();
+            long gio = soGioLam.longValue();
+            long phut = soGioLam.subtract(BigDecimal.valueOf(gio)).multiply(BigDecimal.valueOf(60)).longValue();
+            view.getTxtSoGioLam().setText(String.format("%d.%02d", gio, phut));
             view.getTxtSoGioTangCa().setText(String.format("%.2f", caLam.getSoGioTangCa()));
             BigDecimal tienTip = caLam.getTienTip();
             // Loại bỏ phần thập phân nếu là số nguyên

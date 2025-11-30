@@ -42,6 +42,16 @@ public class ThongKeService {
         return thongKeRepo.getThongKeTongQuan(fromDate, toDate);
     }
 
+    // Thêm phương thức xóa hóa đơn
+    public boolean xoaHoaDon(int maHoaDon) {
+        return thongKeRepo.xoaHoaDon(maHoaDon);
+    }
+
+// Thêm phương thức xóa lịch sử giao dịch
+    public boolean xoaLichSuGiaoDich(int maLichSu) {
+        return thongKeRepo.xoaLichSuGiaoDich(maLichSu);
+    }
+
     public List<Integer> getDanhSachNam() {
         return thongKeRepo.getDanhSachNam();
     }

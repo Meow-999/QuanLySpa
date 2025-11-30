@@ -22,6 +22,11 @@ public class ThongKeView extends JPanel {
     private JTable tblKhachHang, tblDoanhThu, tblDichVu;
     private JTextArea txtTongQuan;
     private JTable tblHoaDon;
+    private JTable tblLichSuGiaoDich;
+    private JComboBox<String> cboLoaiLocLichSu;
+    private JTextField txtTenKHLocLichSu;
+    private JButton btnLocLichSu;
+    private JButton btnXoaHoaDon, btnXoaLichSuGiaoDich;
 
     public ThongKeView() {
         initUI();
@@ -152,12 +157,105 @@ public class ThongKeView extends JPanel {
         // TAB MỚI: Hóa đơn
         JPanel pnHoaDon = createHoaDonPanel();
         tabbedPane.addTab("Hóa đơn", pnHoaDon);
-    }
-// Thêm phương thức tạo panel hóa đơn
 
+        JPanel pnLichSuGiaoDich = createLichSuGiaoDichPanel();
+        tabbedPane.addTab("LS Giao dịch trả trước", pnLichSuGiaoDich);
+    }
+
+    // Thêm phương thức tạo panel lịch sử giao dịch
+    private JPanel createLichSuGiaoDichPanel() {
+        JPanel panel = new JPanel(new BorderLayout(10, 10));
+        panel.setBackground(Color.WHITE);
+        panel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+
+        // Panel điều khiển
+        JPanel pnControl = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 5));
+        pnControl.setBackground(Color.WHITE);
+
+        JLabel lblLoaiLoc = new JLabel("Loại lọc:");
+        lblLoaiLoc.setFont(new Font("Arial", Font.BOLD, 12));
+        lblLoaiLoc.setForeground(COLOR_BUTTON);
+        pnControl.add(lblLoaiLoc);
+
+        cboLoaiLocLichSu = new JComboBox<>(new String[]{"Tất cả", "Theo tên KH"});
+        cboLoaiLocLichSu.setPreferredSize(new Dimension(120, 30));
+        cboLoaiLocLichSu.setBackground(Color.WHITE);
+        cboLoaiLocLichSu.setForeground(COLOR_BUTTON);
+        pnControl.add(cboLoaiLocLichSu);
+
+        JLabel lblTenKH = new JLabel("Tên KH:");
+        lblTenKH.setFont(new Font("Arial", Font.BOLD, 12));
+        lblTenKH.setForeground(COLOR_BUTTON);
+        pnControl.add(lblTenKH);
+
+        txtTenKHLocLichSu = new JTextField(); // Đổi tên biến từ txtMaKHLocLichSu
+        txtTenKHLocLichSu.setPreferredSize(new Dimension(150, 30)); // Tăng độ rộng
+        txtTenKHLocLichSu.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(COLOR_BUTTON, 1),
+                BorderFactory.createEmptyBorder(5, 8, 5, 8)
+        ));
+        pnControl.add(txtTenKHLocLichSu);
+
+        btnLocLichSu = createStyledButton("Lọc", COLOR_BUTTON);
+        pnControl.add(btnLocLichSu);
+        btnXoaLichSuGiaoDich = createStyledButton("Xóa giao dịch", new Color(0xc62828)); // Màu đỏ
+        pnControl.add(btnXoaLichSuGiaoDich);
+
+        panel.add(pnControl, BorderLayout.NORTH);
+
+        // Bảng dữ liệu
+        String[] cols = {"Mã LS", "Mã KH", "Tên KH", "Mã HĐ", "Ngày GD", "Số tiền tăng", "Số tiền giảm", "Tổng tiền", "Tiền phải trả", "Ghi chú"};
+        DefaultTableModel model = new DefaultTableModel(cols, 0) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false;
+            }
+
+            @Override
+            public Class<?> getColumnClass(int columnIndex) {
+                if (columnIndex >= 5 && columnIndex <= 8) { // Các cột số tiền
+                    return Double.class;
+                }
+                return String.class;
+            }
+        };
+
+        tblLichSuGiaoDich = createStyledTable(model);
+
+        // Đặt độ rộng cột
+        tblLichSuGiaoDich.getColumnModel().getColumn(0).setPreferredWidth(60);  // Mã LS
+        tblLichSuGiaoDich.getColumnModel().getColumn(1).setPreferredWidth(60);  // Mã KH
+        tblLichSuGiaoDich.getColumnModel().getColumn(2).setPreferredWidth(120); // Tên KH
+        tblLichSuGiaoDich.getColumnModel().getColumn(3).setPreferredWidth(60);  // Mã HĐ
+        tblLichSuGiaoDich.getColumnModel().getColumn(4).setPreferredWidth(120); // Ngày GD
+        tblLichSuGiaoDich.getColumnModel().getColumn(5).setPreferredWidth(100); // Số tiền tăng
+        tblLichSuGiaoDich.getColumnModel().getColumn(6).setPreferredWidth(100); // Số tiền giảm
+        tblLichSuGiaoDich.getColumnModel().getColumn(7).setPreferredWidth(100); // Tổng tiền
+        tblLichSuGiaoDich.getColumnModel().getColumn(8).setPreferredWidth(100); // Tiền phải trả
+        tblLichSuGiaoDich.getColumnModel().getColumn(9).setPreferredWidth(150); // Ghi chú
+
+        JScrollPane scrollPane = new JScrollPane(tblLichSuGiaoDich);
+        scrollPane.setBorder(BorderFactory.createTitledBorder("Lịch sử giao dịch trả trước"));
+        panel.add(scrollPane, BorderLayout.CENTER);
+
+        return panel;
+    }
+
+// Thêm phương thức tạo panel hóa đơn
     private JPanel createHoaDonPanel() {
         JPanel panel = new JPanel(new BorderLayout());
         panel.setBackground(Color.WHITE);
+
+        // Panel chứa nút xóa
+        JPanel pnButton = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 5));
+        pnButton.setBackground(Color.WHITE);
+
+        btnXoaHoaDon = createStyledButton("Xóa hóa đơn", new Color(0xc62828)); // Màu đỏ
+        pnButton.add(btnXoaHoaDon);
+
+        JPanel pnContent = new JPanel(new BorderLayout());
+        pnContent.setBackground(Color.WHITE);
+        pnContent.add(pnButton, BorderLayout.NORTH);
 
         String[] cols = {"Mã HĐ", "Ngày lập", "Khách hàng", "Nhân viên", "Tổng tiền", "Số DV", "Ghi chú"};
         DefaultTableModel model = new DefaultTableModel(cols, 0) {
@@ -171,7 +269,9 @@ public class ThongKeView extends JPanel {
 
         JScrollPane scrollPane = new JScrollPane(tblHoaDon);
         scrollPane.setBorder(BorderFactory.createTitledBorder("Danh sách hóa đơn theo thời gian"));
-        panel.add(scrollPane, BorderLayout.CENTER);
+        pnContent.add(scrollPane, BorderLayout.CENTER);
+
+        panel.add(pnContent, BorderLayout.CENTER);
 
         return panel;
     }
@@ -381,5 +481,32 @@ public class ThongKeView extends JPanel {
 
     public JTabbedPane getTabbedPane() {
         return tabbedPane;
+    }
+
+    // Thêm getter methods
+    public JTable getTblLichSuGiaoDich() {
+        return tblLichSuGiaoDich;
+    }
+
+    public JComboBox<String> getCboLoaiLocLichSu() {
+        return cboLoaiLocLichSu;
+    }
+// Cập nhật getter method
+
+    public JTextField getTxtTenKHLocLichSu() {
+        return txtTenKHLocLichSu;
+    }
+
+    public JButton getBtnLocLichSu() {
+        return btnLocLichSu;
+    }
+
+    // Thêm getter methods
+    public JButton getBtnXoaHoaDon() {
+        return btnXoaHoaDon;
+    }
+
+    public JButton getBtnXoaLichSuGiaoDich() {
+        return btnXoaLichSuGiaoDich;
     }
 }

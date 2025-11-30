@@ -239,44 +239,158 @@ public class ThongKeRepository {
     }
 
     // Thống kê tổng quan
+// Thống kê tổng quan (phiên bản đơn giản)
     public Map<String, Object> getThongKeTongQuan(java.util.Date fromDate, java.util.Date toDate) {
         Map<String, Object> result = new HashMap<>();
-        // Access sử dụng IIF thay vì CASE WHEN
-        String sql = "SELECT "
-                + "COUNT(DISTINCT hd.MaHoaDon) as TongHoaDon, "
-                + "IIF(SUM(hd.TongTien) IS NULL, 0, SUM(hd.TongTien)) as TongDoanhThu, "
-                + "COUNT(DISTINCT hd.MaKhachHang) as TongKhachHang, "
-                + "IIF(COUNT(DISTINCT hd.MaHoaDon) > 0, IIF(SUM(hd.TongTien) IS NULL, 0, SUM(hd.TongTien)) / COUNT(DISTINCT hd.MaHoaDon), 0) as DonGiaTrungBinh "
+
+        // Đếm tổng hóa đơn và khách hàng
+        String sqlCount = "SELECT "
+                + "COUNT(DISTINCT MaHoaDon) as TongHoaDon, "
+                + "COUNT(DISTINCT MaKhachHang) as TongKhachHang "
+                + "FROM HoaDon "
+                + "WHERE NgayLap BETWEEN ? AND ?";
+
+        // Tính tổng doanh thu từ ChiTietHoaDon (tránh dùng cột TongTien)
+        String sqlDoanhThu = "SELECT "
+                + "IIF(SUM(ct.ThanhTien) IS NULL, 0, SUM(ct.ThanhTien)) as DoanhThuHoaDon "
                 + "FROM HoaDon hd "
+                + "LEFT JOIN ChiTietHoaDon ct ON hd.MaHoaDon = ct.MaHoaDon "
                 + "WHERE hd.NgayLap BETWEEN ? AND ?";
 
-        try (Connection conn = DataConnection.getConnection(); PreparedStatement stmt = conn.prepareStatement(sql)) {
+        // Tổng tiền từ lịch sử giao dịch trả trước
+        String sqlTraTruoc = "SELECT "
+                + "IIF(SUM(SoTienTang) IS NULL, 0, SUM(SoTienTang)) as TongTienTraTruoc "
+                + "FROM LichSuGiaoDichTraTruoc "
+                + "WHERE NgayGiaoDich BETWEEN ? AND ?";
 
-            stmt.setDate(1, new java.sql.Date(fromDate.getTime()));
-            stmt.setDate(2, new java.sql.Date(toDate.getTime()));
+        try (Connection conn = DataConnection.getConnection()) {
 
-            ResultSet rs = stmt.executeQuery();
-            if (rs.next()) {
-                result.put("TongHoaDon", rs.getInt("TongHoaDon"));
-                result.put("TongDoanhThu", rs.getDouble("TongDoanhThu"));
-                result.put("TongKhachHang", rs.getInt("TongKhachHang"));
-                result.put("DonGiaTrungBinh", rs.getDouble("DonGiaTrungBinh"));
-            } else {
-                // Trả về giá trị mặc định nếu không có dữ liệu
-                result.put("TongHoaDon", 0);
-                result.put("TongDoanhThu", 0.0);
-                result.put("TongKhachHang", 0);
-                result.put("DonGiaTrungBinh", 0.0);
+            // Đếm hóa đơn và khách hàng
+            try (PreparedStatement stmt = conn.prepareStatement(sqlCount)) {
+                stmt.setDate(1, new java.sql.Date(fromDate.getTime()));
+                stmt.setDate(2, new java.sql.Date(toDate.getTime()));
+
+                ResultSet rs = stmt.executeQuery();
+                if (rs.next()) {
+                    result.put("TongHoaDon", rs.getInt("TongHoaDon"));
+                    result.put("TongKhachHang", rs.getInt("TongKhachHang"));
+                }
             }
+
+            // Doanh thu từ hóa đơn (tính từ chi tiết)
+            try (PreparedStatement stmt = conn.prepareStatement(sqlDoanhThu)) {
+                stmt.setDate(1, new java.sql.Date(fromDate.getTime()));
+                stmt.setDate(2, new java.sql.Date(toDate.getTime()));
+
+                ResultSet rs = stmt.executeQuery();
+                if (rs.next()) {
+                    result.put("DoanhThuHoaDon", rs.getDouble("DoanhThuHoaDon"));
+                }
+            }
+
+            // Tiền từ lịch sử giao dịch trả trước
+            try (PreparedStatement stmt = conn.prepareStatement(sqlTraTruoc)) {
+                stmt.setTimestamp(1, new Timestamp(fromDate.getTime()));
+                stmt.setTimestamp(2, new Timestamp(toDate.getTime() + 24 * 60 * 60 * 1000 - 1000));
+
+                ResultSet rs = stmt.executeQuery();
+                if (rs.next()) {
+                    result.put("TongTienTraTruoc", rs.getDouble("TongTienTraTruoc"));
+                }
+            }
+
+            // Tính tổng doanh thu thực tế
+            double doanhThuHoaDon = (Double) result.getOrDefault("DoanhThuHoaDon", 0.0);
+            double tienTraTruoc = (Double) result.getOrDefault("TongTienTraTruoc", 0.0);
+            double tongDoanhThuThucTe = doanhThuHoaDon + tienTraTruoc;
+
+            // Tính đơn giá trung bình
+            int tongHoaDon = (Integer) result.getOrDefault("TongHoaDon", 0);
+            double donGiaTrungBinh = tongHoaDon > 0 ? tongDoanhThuThucTe / tongHoaDon : 0;
+
+            result.put("TongDoanhThuThucTe", tongDoanhThuThucTe);
+            result.put("DonGiaTrungBinh", donGiaTrungBinh);
+            result.put("TienTraTruoc", tienTraTruoc);
+
         } catch (SQLException e) {
             e.printStackTrace();
             // Trả về giá trị mặc định nếu có lỗi
             result.put("TongHoaDon", 0);
-            result.put("TongDoanhThu", 0.0);
+            result.put("TongDoanhThuThucTe", 0.0);
             result.put("TongKhachHang", 0);
             result.put("DonGiaTrungBinh", 0.0);
+            result.put("DoanhThuHoaDon", 0.0);
+            result.put("TienTraTruoc", 0.0);
+            result.put("TongTienTraTruoc", 0.0);
         }
         return result;
+    }
+
+// Thêm phương thức xóa hóa đơn
+    public boolean xoaHoaDon(int maHoaDon) {
+        Connection conn = null;
+        try {
+            conn = DataConnection.getConnection();
+            conn.setAutoCommit(false); // Bắt đầu transaction
+
+            // 1. Xóa chi tiết hóa đơn trước
+            String sqlChiTiet = "DELETE FROM ChiTietHoaDon WHERE MaHoaDon = ?";
+            try (PreparedStatement stmt = conn.prepareStatement(sqlChiTiet)) {
+                stmt.setInt(1, maHoaDon);
+                stmt.executeUpdate();
+            }
+
+            // 2. Xóa hóa đơn
+            String sqlHoaDon = "DELETE FROM HoaDon WHERE MaHoaDon = ?";
+            try (PreparedStatement stmt = conn.prepareStatement(sqlHoaDon)) {
+                stmt.setInt(1, maHoaDon);
+                int result = stmt.executeUpdate();
+
+                if (result > 0) {
+                    conn.commit(); // Commit transaction
+                    return true;
+                } else {
+                    conn.rollback(); // Rollback nếu không tìm thấy hóa đơn
+                    return false;
+                }
+            }
+
+        } catch (SQLException e) {
+            try {
+                if (conn != null) {
+                    conn.rollback(); // Rollback nếu có lỗi
+                }
+            } catch (SQLException ex) {
+                ex.printStackTrace();
+            }
+            e.printStackTrace();
+            return false;
+        } finally {
+            try {
+                if (conn != null) {
+                    conn.setAutoCommit(true);
+                    conn.close();
+                }
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+// Thêm phương thức xóa lịch sử giao dịch trả trước
+    public boolean xoaLichSuGiaoDich(int maLichSu) {
+        String sql = "DELETE FROM LichSuGiaoDichTraTruoc WHERE MaLichSu = ?";
+
+        try (Connection conn = DataConnection.getConnection(); PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setInt(1, maLichSu);
+            int result = stmt.executeUpdate();
+            return result > 0;
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
     }
 
     // Lấy danh sách năm có dữ liệu

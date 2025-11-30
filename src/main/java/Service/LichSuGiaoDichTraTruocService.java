@@ -21,6 +21,14 @@ public class LichSuGiaoDichTraTruocService {
         }
     }
 
+    public List<LichSuGiaoDichTraTruoc> getLichSuByTenKhachHang(String tenKhachHang) {
+        try {
+            return repository.getByTenKhachHang(tenKhachHang);
+        } catch (Exception e) {
+            throw new RuntimeException("Lỗi khi lấy lịch sử theo tên khách hàng: " + e.getMessage(), e);
+        }
+    }
+
     public List<LichSuGiaoDichTraTruoc> getLichSuByMaKhachHang(int maKhachHang) {
         try {
             return repository.getByMaKhachHang(maKhachHang);
